@@ -1,0 +1,46 @@
+#!/usr/bin/env ruby
+
+require "bundler/inline"
+gemfile do
+  source "https://rubygems.org"
+
+  gem "haddock"
+  gem "sinatra"
+  gem "rackup"
+  gem "webrick"
+  gem "rubyzip", require: "zip"
+  gem "http"
+end
+
+include Haddock
+
+if Password::PATHS.none? { File.readable? it }
+  url = "http://gwicks.net/textlists/english3.zip"
+  path = File.join __dir__, File.basename(url)
+
+  unless File.readable? path
+    response = HTTP.get url
+    raise unless response.status == 200
+
+    File.open path, "w" do |file|
+      response.body.each { file << it }
+    end
+  end
+
+  File.open path do |file|
+    Zip::InputStream.open file do |stream|
+      raise unless stream.get_next_entry
+      Password.class_variable_set :@@diction, stream.readlines
+    end
+  end
+end
+
+set :port, 9292
+get %r{/(\d*)?} do |length|
+  length = length.to_i
+  length = Password::DEFAULT if length.zero?
+
+  Password.generate length
+end
+
+Sinatra::Application.run!
