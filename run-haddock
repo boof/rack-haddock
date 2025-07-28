@@ -14,7 +14,8 @@ end
 
 include Haddock
 
-if Password::PATHS.none? { File.readable? it }
+# If there are no dictionaries, JUST WORDS!
+if Password::PATHS.none? { |path| File.readable? path }
   url = "http://gwicks.net/textlists/english3.zip"
   path = File.join __dir__, File.basename(url)
 
@@ -23,7 +24,7 @@ if Password::PATHS.none? { File.readable? it }
     raise unless response.status == 200
 
     File.open path, "w" do |file|
-      response.body.each { file << it }
+      response.body.each { |chunk| file << chunk }
     end
   end
 
